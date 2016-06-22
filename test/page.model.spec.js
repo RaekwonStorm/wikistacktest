@@ -12,7 +12,7 @@ chai.use(spies);
 describe('Page model', function () {
 
   before(function (done) {
-    var db = new Sequelize('postgres://localhost:5432/wikistackstest', {
+    var db = new Sequelize('postgres://localhost:5432/wikistacktest', {
     logging: false
     });
 
@@ -28,33 +28,13 @@ describe('Page model', function () {
 
   describe('Virtuals', function () {
 
-    // var page;
-    // var page2 = Page.build({
-    //   title: "Stinky Cheeses",
-    //   content: "I only eat the stinkiest of cheeses",
-    //   tags: ["#socool", "#dank", "#himom"]
-    // })
-
-    // beforeEach(function (done) {
-    //   page = Page.build({
-    //     title: 'New World Monkeys',
-    //     content: "Blah blah blah",
-    //     tags: ["#Hi", "#monkeys", "#socool"]
-    //   });
-    //   return page.validate()
-    //   .then(function () {
-    //     done();
-    //   }).catch(done);
-    // });
-
-
     describe('route', function () {
       it('returns the url_name prepended by "/wiki/"', function () {
         var page = Page.build({
           urlTitle: "New_World_Monkeys"
         });
-        expect(page.route).to.be.equal('/wiki/New_World_Monkeys')
-      })
+        expect(page.route).to.be.equal('/wiki/New_World_Monkeys');
+      });
     });
 
     describe('renderedContent', function () {
@@ -69,8 +49,40 @@ describe('Page model', function () {
 
   describe('Class methods', function () {
     describe('findByTag', function () {
-      it('gets pages with the search tag');
-      it('does not get pages without the search tag');
+      beforeEach(function () {
+        return Promise.all([
+          Page.create({
+            title: 'Test Page 1',
+            content: 'This is content 1',
+            tags: ['misc', 'test', 'star-wars']
+          }),
+          Page.create({
+            title: 'Test Page 2',
+            content: 'Other stuff',
+            tags: ['misc', 'star-wars', 'fsa']
+          })
+        ]);
+      });
+      afterEach(function(){
+        Page.destroy;
+      });
+
+      it('gets pages with the search tag', function (done) {
+        Page.findByTag("star-wars")
+        .then(function (pages) {
+          expect(pages).to.have.lengthOf(2);
+          done();
+        }).catch(done);
+      });
+
+      it('does not get pages without the search tag', function (done) {
+        Page.findByTag('falafel')
+        .then(function(pages) {
+          expect(pages).to.have.lengthOf(0);
+           done();
+        })
+        .catch(done);
+      });
     });
   });
 
@@ -83,7 +95,19 @@ describe('Page model', function () {
   });
 
   describe('Validations', function () {
-    it('errors without title');
+    var page;
+    beforeEach(function(){
+      page = Page.create();
+    })
+    it('errors without title', function(done){
+      page.validate()
+      .then(function (err){
+        expect(err).to.exist;
+        expect(err.errors).to.exist;
+        expect(err.error[0].path).to.equal('title');
+        done();
+      })
+    })
     it('errors without content');
     it('errors given an invalid status');
   });
